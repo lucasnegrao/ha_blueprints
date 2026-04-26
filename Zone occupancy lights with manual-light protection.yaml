@@ -1,0 +1,173 @@
+blueprint:
+  name: Zone occupancy lights with manual-light protection
+  domain: automation
+
+  input:
+    near_sensor:
+      selector:
+        entity:
+          domain: binary_sensor
+    far_sensor:
+      selector:
+        entity:
+          domain: binary_sensor
+    door_sensor:
+      selector:
+        entity:
+          domain: binary_sensor
+
+    auto_helper:
+      selector:
+        entity:
+          domain: input_boolean
+
+    protected_lights:
+      selector:
+        entity:
+          domain: light
+
+    near_lights:
+      selector:
+        target:
+          entity:
+            domain: light
+    far_lights:
+      selector:
+        target:
+          entity:
+            domain: light
+    door_lights:
+      selector:
+        target:
+          entity:
+            domain: light
+
+    near_brightness:
+      default: 20
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    far_brightness:
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    door_brightness:
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+
+    clear_delay:
+      default:
+        seconds: 30
+      selector:
+        duration:
+
+    turn_off_transition:
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 60
+          unit_of_measurement: seconds
+
+triggers:
+  - trigger: state
+    entity_id: !input near_sensor
+    from: "off"
+    to: "on"
+    id: near
+  - trigger: state
+    entity_id: !input far_sensor
+    from: "off"
+    to: "on"
+    id: far
+  - trigger: state
+    entity_id: !input door_sensor
+    from: "off"
+    to: "on"
+    id: door
+
+variables:
+  near_sensor: !input near_sensor
+  far_sensor: !input far_sensor
+  door_sensor: !input door_sensor
+  auto_helper: !input auto_helper
+  protected_lights: !input protected_lights
+  near_brightness: !input near_brightness
+  far_brightness: !input far_brightness
+  door_brightness: !input door_brightness
+  turn_off_transition: !input turn_off_transition
+
+actions:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: !input auto_helper
+            state: "off"
+          - condition: state
+            entity_id: !input protected_lights
+            state: "on"
+        sequence:
+          - stop: Lights were already on manually
+
+  - action: input_boolean.turn_on
+    target:
+      entity_id: !input auto_helper
+
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: near
+        sequence:
+          - action: light.turn_on
+            target: !input near_lights
+            data:
+              brightness_pct: "{{ near_brightness }}"
+
+      - conditions:
+          - condition: trigger
+            id: far
+        sequence:
+          - action: light.turn_on
+            target: !input far_lights
+            data:
+              brightness_pct: "{{ far_brightness }}"
+
+      - conditions:
+          - condition: trigger
+            id: door
+        sequence:
+          - action: light.turn_on
+            target: !input door_lights
+            data:
+              brightness_pct: "{{ door_brightness }}"
+
+  - delay: !input clear_delay
+
+  - wait_template: >
+      {{
+        is_state(near_sensor, 'off') and
+        is_state(far_sensor, 'off') and
+        is_state(door_sensor, 'off')
+      }}
+
+  - action: light.turn_off
+    target:
+      entity_id: !input protected_lights
+    data:
+      transition: "{{ turn_off_transition }}"
+
+  - action: input_boolean.turn_off
+    target:
+      entity_id: !input auto_helper
+
+mode: restart
+max_exceeded: silent
