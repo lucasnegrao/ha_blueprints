@@ -1,15 +1,14 @@
 blueprint:
-  name: Motion Auto Light With Manual Override
+  name: Triggered Auto Light With Manual Override
   description: >
-    Turns a light on from a motion/presence sensor, turns it off after a delay,
+    Turns a light on from a binary sensor, turns it off optionally after a delay,
     and detects manual on/off changes so the light can be removed from the
-    auto-controlled list. Ignores light state changes caused by automations/scripts
-    using context.parent_id.
+    auto-controlled list. 
   domain: automation
 
   input:
     motion_sensor:
-      name: Motion / presence sensor
+      name: Trigger sensor
       selector:
         entity:
           filter:
@@ -24,7 +23,7 @@ blueprint:
           domain: light
 
     enable_entity:
-      name: Optional night condition entity
+      name: Optional enable entity
       description: >
         Optional. Leave empty to always allow the automation.
         If set, automation only runs when this entity is on.
@@ -52,7 +51,7 @@ blueprint:
 
     deactivate_delay:
       name: Deactivate delay
-      description: How long after motion turns off before running deactivate.
+      description: How long after trigger turns off before running deactivate.
       default:
         seconds: 30
       selector:
