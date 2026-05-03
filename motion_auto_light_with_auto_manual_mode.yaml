@@ -1,3 +1,44 @@
+blueprint:
+  name: Motion Auto Light With Manual Override
+  description: >
+    Turns a light on from a motion/presence sensor, turns it off after a delay,
+    and detects manual on/off changes so the light can be removed from the
+    auto-controlled list. Ignores light state changes caused by automations/scripts
+    using context.parent_id.
+  domain: automation
+
+  input:
+    motion_sensor:
+      name: Motion / presence sensor
+      selector:
+        entity:
+          domain: binary_sensor
+
+    controlled_light:
+      name: Controlled light
+      selector:
+        entity:
+          domain: light
+
+    enable_entity:
+      name: Optional night condition entity
+      description: >
+        Optional. Leave empty to always allow the automation.
+        If set, automation only runs when this entity is on.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+            - domain: binary_sensor
+
+    auto_lights_select:
+      name: Auto lights select helper
+      description: Input select used by the script to track auto-controlled lights.
+      default: input_select.auto_lights
+      selector:
+        entity:
+          domain: input_select
 mode: restart
 max_exceeded: silent
 
