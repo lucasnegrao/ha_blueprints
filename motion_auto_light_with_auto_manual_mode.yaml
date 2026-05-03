@@ -12,7 +12,10 @@ blueprint:
       name: Motion / presence sensor
       selector:
         entity:
-          domain: binary_sensor
+          filter:
+            - domain: input_boolean
+            - domain: binary_sensor
+            - domain: lock
 
     controlled_light:
       name: Controlled light
@@ -89,3 +92,31 @@ conditions:
   - condition: template
     value_template: >
       {{ enable_entity == '' or is_state(enable_entity, 'on') }}
+actions:
+  - variables:
+      light: !input controlled_light
+      select: !input auto_lights_select
+      script_entity: !input auto_lights_script
+
+      is_automation_change: >
+        {{ trigger.id == 'manual'
+           and trigger.to_state.context.parent_id is not none }}
+
+      light_is_managed: >
+        {{ light in (state_attr(select, 'options') or []) }}
+
+      mode: >
+        {{ trigger.id }}
+
+  - condition: template
+    value_template: >
+      {{ not is_automation_change or (not light_is_managed and mode == 'manual') }}
+
+  - action: script.turn_on
+    target:
+      entity_id: "{{ script_entity }}"
+    data:
+      variables:
+        auto_lights_select: "{{ select }}"
+        light: "{{ light }}"
+        mode: "{{ mode }}"
