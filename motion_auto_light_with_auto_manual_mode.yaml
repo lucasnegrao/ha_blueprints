@@ -1,0 +1,119 @@
+blueprint:
+  name: Motion Auto Light With Manual Override
+  description: >
+    Turns a light on from a motion/presence sensor, turns it off after a delay,
+    and detects manual on/off changes so the light can be removed from the
+    auto-controlled list. Ignores light state changes caused by automations/scripts
+    using context.parent_id.
+  domain: automation
+
+  input:
+    motion_sensor:
+      name: Motion / presence sensor
+      selector:
+        entity:
+          domain: binary_sensor
+
+    controlled_light:
+      name: Controlled light
+      selector:
+        entity:
+          domain: light
+
+  condition_entity:
+    name: Optional condition entity
+    description: >
+      Optional. Leave empty to always allow the automation.
+      If set, automation only runs when this entity is on.
+    default: ""
+    selector:
+      entity:
+        filter:
+          - domain: input_boolean
+          - domain: binary_sensor
+
+    auto_lights_select:
+      name: Auto lights select helper
+      description: Input select used by the script to track auto-controlled lights.
+      default: input_select.auto_lights
+      selector:
+        entity:
+          domain: input_select
+
+    auto_lights_script:
+      name: Auto lights script
+      description: Script that receives light, auto_lights_select, and mode.
+      default: script.auto_lights_2
+      selector:
+        entity:
+          domain: script
+
+    deactivate_delay:
+      name: Deactivate delay
+      description: How long after motion turns off before running deactivate.
+      default:
+        seconds: 120
+      selector:
+        duration:
+
+mode: restart
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input motion_sensor
+    from: "off"
+    to: "on"
+    id: activate
+
+  - trigger: state
+    entity_id: !input motion_sensor
+    from: "on"
+    to: "off"
+    for: !input deactivate_delay
+    id: deactivate
+
+  - trigger: state
+    entity_id: !input controlled_light
+    from:
+      - "off"
+      - "on"
+    to:
+      - "off"
+      - "on"
+    id: manual
+
+conditions:
+  - condition: template
+    value_template: >
+      {% set condition_entity = !input condition_entity %}
+      {{ condition_entity == '' or is_state(condition_entity, 'on') }}
+
+actions:
+  - variables:
+      light: !input controlled_light
+      select: !input auto_lights_select
+      script_entity: !input auto_lights_script
+
+      is_automation_change: >
+        {{ trigger.id == 'manual'
+           and trigger.to_state.context.parent_id is not none }}
+
+      light_is_managed: >
+        {{ light in (state_attr(select, 'options') or []) }}
+
+      mode: >
+        {{ trigger.id }}
+
+  - condition: template
+    value_template: >
+      {{ not is_automation_change or (not light_is_managed and mode == 'manual') }}
+
+  - action: script.turn_on
+    target:
+      entity_id: "{{ script_entity }}"
+    data:
+      variables:
+        auto_lights_select: "{{ select }}"
+        light: "{{ light }}"
+        mode: "{{ mode }}"
