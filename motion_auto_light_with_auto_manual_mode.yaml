@@ -21,16 +21,16 @@ blueprint:
           domain: light
 
   condition_entity:
-    name: Optional condition entity
-    description: >
-      Optional. Leave empty to always allow the automation.
-      If set, automation only runs when this entity is on.
-    default: ""
-    selector:
-      entity:
-        filter:
-          - domain: input_boolean
-          - domain: binary_sensor
+      name: Optional condition entity
+      description: >
+        Optional. Leave empty to always allow the automation.
+        If set, automation only runs when this entity is on.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+            - domain: binary_sensor
 
     auto_lights_select:
       name: Auto lights select helper
