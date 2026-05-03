@@ -39,6 +39,22 @@ blueprint:
       selector:
         entity:
           domain: input_select
+    auto_lights_script:
+      name: Auto lights script
+      description: Script that receives light, auto_lights_select, and mode.
+      default: script.auto_lights_2
+      selector:
+        entity:
+          domain: script
+
+    deactivate_delay:
+      name: Deactivate delay
+      description: How long after motion turns off before running deactivate.
+      default:
+        seconds: 30
+      selector:
+        duration:
+        
 mode: restart
 max_exceeded: silent
 
