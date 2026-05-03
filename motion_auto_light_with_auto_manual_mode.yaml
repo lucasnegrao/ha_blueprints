@@ -20,7 +20,7 @@ blueprint:
         entity:
           domain: light
 
-  condition_entity:
+   condition_entity:
       name: Optional condition entity
       description: >
         Optional. Leave empty to always allow the automation.
